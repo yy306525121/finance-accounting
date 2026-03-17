@@ -99,6 +99,29 @@ python finance.py report income-statement --period 2026-02 --output income_state
 python finance.py report cash-flow --period 2026-02 --output cash_flow.pdf
 ```
 
+## 环境变量
+
+在使用本技能之前，需要预先设置以下环境变量：
+
+| 环境变量 | 必填 | 默认值 | 说明 |
+|----------|------|--------|------|
+| `FINANCE_DATA_DIR` | 否 | `data` | 财务数据存储目录，用于存放交易记录（`transactions.csv`）、账户配置（`accounts.yaml`）及税务配置（`tax_config.yaml`）等文件。若未设置，将在当前工作目录下自动创建 `data` 子目录。 |
+
+### 设置示例
+
+```bash
+# Linux / macOS
+export FINANCE_DATA_DIR=/path/to/your/finance/data
+
+# Windows (命令提示符)
+set FINANCE_DATA_DIR=C:\path\to\your\finance\data
+
+# Windows (PowerShell)
+$env:FINANCE_DATA_DIR = "C:\path\to\your\finance\data"
+```
+
+> **注意**：如果指定目录不存在，脚本会自动创建该目录。建议将此变量写入系统的环境变量配置文件（如 `~/.bashrc`、`~/.zshrc`）以便长期生效。
+
 ## 配置文件
 
 ### 会计科目设置
