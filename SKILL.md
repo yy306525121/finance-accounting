@@ -54,49 +54,49 @@ dependencies:
 ### 基本记账
 ```bash
 # 记录收入
-python finance.py record --type income --amount 1000 --category "销售收入" --date "2026-02-28"
+python script/finance.py record --type income --amount 1000 --category "销售收入" --date "2026-02-28"
 
 # 记录支出
-python finance.py record --type expense --amount 500 --category "办公用品" --date "2026-02-28"
+python script/finance.py record --type expense --amount 500 --category "办公用品" --date "2026-02-28"
 
 # 查看余额
-python finance.py balance
+python script/finance.py balance
 ```
 
 ### 对账处理
 ```bash
 # 导入银行流水
-python finance.py reconcile import --file bank_statement.csv
+python script/finance.py reconcile import --file bank_statement.csv
 
 # 自动对账
-python finance.py reconcile auto
+python script/finance.py reconcile auto
 
 # 生成对账报告
-python finance.py reconcile report --output reconciliation_report.pdf
+python script/finance.py reconcile report --output reconciliation_report.pdf
 ```
 
 ### 税务计算
 ```bash
 # 计算增值税
-python finance.py tax vat --period 2026-02
+python script/finance.py tax vat --period 2026-02
 
 # 生成税务申报表
-python finance.py tax report --type vat --period 2026-02 --output vat_report.xlsx
+python script/finance.py tax report --type vat --period 2026-02 --output vat_report.xlsx
 
 # 税务规划建议
-python finance.py tax plan --year 2026
+python script/finance.py tax plan --year 2026
 ```
 
 ### 报表生成
 ```bash
 # 生成资产负债表
-python finance.py report balance-sheet --period 2026-02 --output balance_sheet.pdf
+python script/finance.py report balance-sheet --period 2026-02 --output balance_sheet.pdf
 
 # 生成利润表
-python finance.py report income-statement --period 2026-02 --output income_statement.pdf
+python script/finance.py report income-statement --period 2026-02 --output income_statement.pdf
 
 # 生成现金流量表
-python finance.py report cash-flow --period 2026-02 --output cash_flow.pdf
+python script/finance.py report cash-flow --period 2026-02 --output cash_flow.pdf
 ```
 
 ## 环境变量
