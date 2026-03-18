@@ -1,7 +1,7 @@
 ---
 name: finance-accounting
 version: 1.0.0
-description: "财务会计文书处理综合技能包 - 包含记账、对账、税务、报表等核心功能"
+description: "财务会计处理技能包，提供记账、银行流水导入、税务计算和基础报表生成"
 author: 天元 (⚡)
 category: finance
 tags: [accounting, finance, tax, document, invoice]
@@ -15,88 +15,64 @@ dependencies:
 # 财务会计文书技能
 
 ## 概述
-本技能包提供完整的财务会计文书处理功能，包括记账、对账、税务计算、报表生成等核心业务流程。
+本技能包提供轻量级财务会计处理能力，包括记账、银行流水导入、税务计算和基础报表生成。
 
-## 功能模块
+## 当前支持的功能
 
-### 1. 基础记账模块
+### 1. 基础记账
 - **流水账记录**: 收入、支出、转账记录
-- **科目管理**: 会计科目设置和分类
-- **凭证生成**: 自动生成会计凭证
+- **科目字段**: 记录会计科目编号
 - **余额计算**: 实时计算账户余额
 
-### 2. 对账模块
-- **银行对账**: 自动匹配银行流水
-- **往来对账**: 客户/供应商对账
-- **差异处理**: 自动识别和处理差异
-- **对账报告**: 生成对账报告
+### 2. 数据导入
+- **银行流水导入**: 将标准 CSV 银行流水转换为收入/支出记录
+- **批量入账**: 自动写入交易台账
 
 ### 3. 税务模块
-- **增值税计算**: 自动计算增值税
-- **所得税预缴**: 个人所得税/企业所得税
-- **税务申报**: 生成税务申报表
-- **税务规划**: 税务优化建议
+- **增值税计算**: 支持按期间统计收入后计算
+- **企业所得税计算**: 根据阈值和税率计算
 
 ### 4. 报表模块
-- **资产负债表**: 自动生成资产负债表
-- **利润表**: 生成利润表
-- **现金流量表**: 现金流量分析
-- **自定义报表**: 按需生成报表
-
-### 5. 文档生成
-- **发票生成**: 自动生成电子发票
-- **对账单**: 客户对账单
-- **税务报告**: 税务申报文档
-- **审计报告**: 审计所需文档
+- **资产负债表**: 输出 JSON 格式基础资产负债表
+- **利润表**: 输出 JSON 格式利润表
+- **期间过滤**: 支持 `YYYY-MM`、`YYYY-QN`、`YYYY`、`YYYY-MM-DD`
 
 ## 使用方法
 
 ### 基本记账
 ```bash
 # 记录收入
-python script/finance.py record --type income --amount 1000 --category "销售收入" --date "2026-02-28"
+python script/finance.py record --type income --amount 1000 --account 4001 --description "销售产品" --category "销售收入" --date "2026-02-28"
 
 # 记录支出
-python script/finance.py record --type expense --amount 500 --category "办公用品" --date "2026-02-28"
+python script/finance.py record --type expense --amount 500 --account 5001 --description "购买办公用品" --category "办公费用" --date "2026-02-28"
 
 # 查看余额
 python script/finance.py balance
 ```
 
-### 对账处理
+### 数据导入
 ```bash
-# 导入银行流水
-python script/finance.py reconcile import --file bank_statement.csv
-
-# 自动对账
-python script/finance.py reconcile auto
-
-# 生成对账报告
-python script/finance.py reconcile report --output reconciliation_report.pdf
+# 导入银行流水 CSV
+python script/finance.py import --file examples/bank_statement.csv
 ```
 
 ### 税务计算
 ```bash
 # 计算增值税
-python script/finance.py tax vat --period 2026-02
+python script/finance.py tax --type vat --period 2026-02
 
-# 生成税务申报表
-python script/finance.py tax report --type vat --period 2026-02 --output vat_report.xlsx
-
-# 税务规划建议
-python script/finance.py tax plan --year 2026
+# 计算企业所得税
+python script/finance.py tax --type income_tax --period 2026-Q1
 ```
 
 ### 报表生成
 ```bash
 # 生成资产负债表
-python script/finance.py report balance-sheet --period 2026-02 --output balance_sheet.pdf
+python script/finance.py report --type balance_sheet --period 2026-02 --output balance_sheet.json
 
 # 生成利润表
-python script/finance.py report income-statement --period 2026-02 --output income_statement.pdf
-
-# 生成现金流量表
-python script/finance.py report cash-flow --period 2026-02 --output cash_flow.pdf
+python script/finance.py report --type income_statement --period 2026-Q1 --output income_statement.json
 ```
 
 ## 环境变量
@@ -105,7 +81,7 @@ python script/finance.py report cash-flow --period 2026-02 --output cash_flow.pd
 
 | 环境变量 | 必填 | 默认值 | 说明 |
 |----------|------|--------|------|
-| `FINANCE_DATA_DIR` | 否 | `data` | 财务数据存储目录，用于存放交易记录（`transactions.csv`）、账户配置（`accounts.yaml`）及税务配置（`tax_config.yaml`）等文件。若未设置，将在当前工作目录下自动创建 `data` 子目录。 |
+| `FINANCE_DATA_DIR` | 否 | `data` | 财务数据存储目录，用于存放交易记录（`transactions.csv`）以及运行时使用的账户和税务配置（`accounts.yaml`、`tax_config.yaml`）。若未设置，将在当前工作目录下自动创建 `data` 子目录。 |
 
 ### 设置示例
 
@@ -159,15 +135,15 @@ accounts:
 
 ### 税务设置
 ```yaml
-# config/tax.yaml
+# config/tax_config.yaml
 tax:
-  vat_rate: 0.13  # 增值税率
-  income_tax_rate: 0.25  # 企业所得税率
-  tax_threshold: 300000  # 起征点
-  
-  declarations:
-    vat: monthly  # 增值税申报周期
-    income_tax: quarterly  # 所得税申报周期
+  vat:
+    rate: 0.13
+    declaration_period: monthly
+  income_tax:
+    standard_rate: 0.25
+    threshold: 300000
+    declaration_period: quarterly
 ```
 
 ## 数据格式
@@ -186,24 +162,11 @@ date,description,amount,balance
 2026-02-28,水电费支出,-500.00,14500.00
 ```
 
-## 集成功能
-
-### 与现有技能集成
-- **github技能**: 版本控制财务数据
-- **tavily-search技能**: 搜索税务法规
-- **proactive-agent技能**: 自动执行定期任务
-
-### 外部系统集成
-- **银行API**: 自动获取银行流水
-- **税务系统**: 电子申报接口
-- **ERP系统**: 企业资源计划集成
-
 ## 安全注意事项
 
 ### 数据安全
-- 财务数据加密存储
-- 访问权限控制
-- 操作日志记录
+- 仓库当前未内置加密和权限控制
+- 建议将数据目录放在受限路径并自行备份
 
 ### 合规性
 - 符合会计准则
@@ -213,9 +176,9 @@ date,description,amount,balance
 ## 故障排除
 
 ### 常见问题
-1. **数据导入失败**: 检查文件格式和编码
-2. **计算错误**: 验证会计科目设置
-3. **报表生成失败**: 检查依赖库安装
+1. **数据导入失败**: 检查 CSV 列是否包含 `date,description,amount,balance`
+2. **计算错误**: 检查 `FINANCE_DATA_DIR` 下的 `tax_config.yaml` 是否符合示例结构
+3. **报表生成失败**: 确认目标期间存在交易记录
 
 ### 日志查看
 ```bash

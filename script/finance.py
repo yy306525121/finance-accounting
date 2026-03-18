@@ -10,9 +10,9 @@ import pandas as pd
 import json
 import yaml
 import os
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
-import sys
+import re
 
 class FinanceAccounting:
     """财务会计核心类"""
@@ -72,7 +72,77 @@ class FinanceAccounting:
         
         if self.tax_config_file.exists():
             with open(self.tax_config_file, 'r', encoding='utf-8') as f:
-                self.tax_config = yaml.safe_load(f)
+                loaded_tax_config = yaml.safe_load(f)
+                if loaded_tax_config:
+                    self.tax_config = self._normalize_tax_config(loaded_tax_config)
+
+    def _normalize_tax_config(self, config):
+        """兼容扁平和嵌套两种税务配置结构"""
+        if "vat_rate" in config:
+            return config
+
+        tax_config = config.get("tax", config)
+        vat_config = tax_config.get("vat", {})
+        income_tax_config = tax_config.get("income_tax", {})
+        declarations = tax_config.get("declarations", {})
+
+        return {
+            "vat_rate": vat_config.get("rate", 0.13),
+            "income_tax_rate": income_tax_config.get("standard_rate", 0.25),
+            "tax_threshold": income_tax_config.get("threshold", 300000),
+            "declarations": {
+                "vat": vat_config.get("declaration_period", declarations.get("vat", "monthly")),
+                "income_tax": income_tax_config.get(
+                    "declaration_period",
+                    declarations.get("income_tax", "quarterly"),
+                ),
+            },
+            "raw": tax_config,
+        }
+
+    def _load_transactions(self):
+        """加载交易数据"""
+        if not self.transactions_file.exists():
+            return None
+
+        df = pd.read_csv(self.transactions_file, encoding='utf-8')
+        df["date"] = pd.to_datetime(df["date"], errors="coerce")
+        return df.dropna(subset=["date"])
+
+    def _filter_transactions_by_period(self, df, period):
+        """按期间过滤交易，支持 YYYY-MM / YYYY-QN / YYYY / YYYY-MM-DD"""
+        if not period:
+            return df
+
+        month_match = re.fullmatch(r"(\d{4})-(\d{2})", period)
+        quarter_match = re.fullmatch(r"(\d{4})-Q([1-4])", period, re.IGNORECASE)
+        year_match = re.fullmatch(r"\d{4}", period)
+        day_match = re.fullmatch(r"\d{4}-\d{2}-\d{2}", period)
+
+        if day_match:
+            target_date = pd.Timestamp(period)
+            return df[df["date"].dt.normalize() == target_date]
+
+        if month_match:
+            year, month = map(int, month_match.groups())
+            return df[(df["date"].dt.year == year) & (df["date"].dt.month == month)]
+
+        if quarter_match:
+            year = int(quarter_match.group(1))
+            quarter = int(quarter_match.group(2))
+            start_month = (quarter - 1) * 3 + 1
+            end_month = start_month + 2
+            return df[
+                (df["date"].dt.year == year)
+                & (df["date"].dt.month >= start_month)
+                & (df["date"].dt.month <= end_month)
+            ]
+
+        if year_match:
+            year = int(period)
+            return df[df["date"].dt.year == year]
+
+        return df
     
     def record_transaction(self, date, trans_type, account, amount, description, category):
         """记录交易"""
@@ -100,12 +170,11 @@ class FinanceAccounting:
     
     def get_balance(self):
         """计算余额"""
-        if not self.transactions_file.exists():
+        df = self._load_transactions()
+        if df is None:
             print("暂无交易记录")
             return {"total_income": 0, "total_expense": 0, "balance": 0}
-        
-        df = pd.read_csv(self.transactions_file, encoding='utf-8')
-        
+
         total_income = df[df['type'] == 'income']['amount'].sum()
         total_expense = df[df['type'] == 'expense']['amount'].sum()
         balance = total_income - total_expense
@@ -130,8 +199,11 @@ class FinanceAccounting:
         if tax_type == "vat":
             # 增值税计算
             if income is None:
-                # 从交易记录计算收入
-                df = pd.read_csv(self.transactions_file, encoding='utf-8')
+                df = self._load_transactions()
+                if df is None:
+                    print("❌ 无交易记录，无法计算税款")
+                    return None
+                df = self._filter_transactions_by_period(df, period)
                 income = df[df['type'] == 'income']['amount'].sum()
             
             vat_amount = income * self.tax_config["vat_rate"]
@@ -156,7 +228,11 @@ class FinanceAccounting:
         elif tax_type == "income_tax":
             # 所得税计算
             if income is None:
-                df = pd.read_csv(self.transactions_file, encoding='utf-8')
+                df = self._load_transactions()
+                if df is None:
+                    print("❌ 无交易记录，无法计算税款")
+                    return None
+                df = self._filter_transactions_by_period(df, period)
                 net_income = df[df['type'] == 'income']['amount'].sum() - df[df['type'] == 'expense']['amount'].sum()
                 income = max(0, net_income)
             
@@ -191,12 +267,13 @@ class FinanceAccounting:
     
     def generate_report(self, report_type, period, output_file=None):
         """生成报表"""
-        if not self.transactions_file.exists():
+        df = self._load_transactions()
+        if df is None:
             print("❌ 无交易记录，无法生成报表")
-            return
-        
-        df = pd.read_csv(self.transactions_file, encoding='utf-8')
-        
+            return None
+
+        df = self._filter_transactions_by_period(df, period)
+
         if report_type == "balance_sheet":
             # 简化资产负债表
             total_assets = df[df['type'] == 'income']['amount'].sum()

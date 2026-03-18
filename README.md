@@ -1,344 +1,210 @@
 # 财务会计文书技能
 
-## 📋 概述
-一个完整的财务会计处理技能包，提供记账、对账、税务计算、报表生成等核心功能。
+## 概述
+这是一个轻量级财务会计技能包，当前提供以下能力：
 
-## 🚀 快速开始
+- 记录收入、支出、转账
+- 导入标准 CSV 银行流水
+- 计算增值税和企业所得税
+- 生成基础资产负债表和利润表
+- 按期间过滤数据，支持 `YYYY-MM`、`YYYY-QN`、`YYYY`、`YYYY-MM-DD`
 
-### 安装依赖
+## 安装依赖
 ```bash
 pip install pandas openpyxl reportlab pyyaml
 ```
 
-### 基本使用
-```bash
-# 进入技能目录
-cd skills/finance-accounting
+如果你使用 conda，也可以直接用对应环境中的 Python 运行，例如：
 
+```bash
+/opt/homebrew/Caskroom/miniconda/base/envs/python3.12/bin/python script/finance.py --help
+```
+
+## 快速开始
+```bash
 # 记录一笔收入
-python script/finance.py record --type income --amount 50000 --account 4001 --description "产品销售" --category "销售收入"
+python script/finance.py record --type income --amount 50000 --account 4001 --description "产品销售" --category "销售收入" --date 2026-02-01
 
 # 记录一笔支出
-python script/finance.py record --type expense --amount 15000 --account 5001 --description "采购原材料" --category "主营业务成本"
+python script/finance.py record --type expense --amount 15000 --account 5001 --description "采购原材料" --category "主营业务成本" --date 2026-02-05
 
 # 查看余额
 python script/finance.py balance
 
-# 计算增值税
-python script/finance.py tax --type vat --period 2026-02 --income 50000
+# 计算税款
+python script/finance.py tax --type vat --period 2026-02
+python script/finance.py tax --type income_tax --period 2026-Q1
 
-# 生成资产负债表
+# 生成报表
 python script/finance.py report --type balance_sheet --period 2026-02 --output balance_sheet.json
+python script/finance.py report --type income_statement --period 2026-Q1 --output income_statement.json
+
+# 导入银行流水
+python script/finance.py import --file examples/bank_statement.csv
 ```
 
-## 📊 核心功能
+## 命令说明
 
-### 1. 记账管理
-- **收入记录**: 记录各种收入来源
-- **支出记录**: 记录各项成本费用
-- **转账记录**: 记录资金转移
-- **科目管理**: 完整的会计科目体系
+### 1. `record`
+记录单笔交易。
 
-### 2. 对账处理
-- **银行对账**: 自动匹配银行流水
-- **往来对账**: 客户/供应商对账
-- **差异分析**: 自动识别差异原因
-- **对账报告**: 生成详细对账报告
-
-### 3. 税务计算
-- **增值税**: 自动计算增值税
-- **企业所得税**: 累进税率计算
-- **个人所得税**: 综合所得税计算
-- **其他税费**: 城建税、教育附加等
-
-### 4. 报表生成
-- **资产负债表**: 资产=负债+所有者权益
-- **利润表**: 收入-费用=利润
-- **现金流量表**: 现金流入流出分析
-- **税务申报表**: 各类税务申报表
-
-### 5. 文档处理
-- **发票生成**: 自动生成电子发票
-- **对账单**: 客户对账单
-- **税务报告**: 税务申报文档
-- **审计报告**: 审计所需文档
-
-## 🔧 配置说明
-
-### 会计科目配置
-编辑 `config/accounts.yaml` 文件：
-```yaml
-accounts:
-  assets:
-    - code: "1001"
-      name: "现金"
-      type: "current_asset"
-  # ... 更多科目
+```bash
+python script/finance.py record \
+  --type income \
+  --amount 1000 \
+  --account 4001 \
+  --description "销售产品" \
+  --category "销售收入" \
+  --date 2026-02-28
 ```
 
-### 税务配置
-编辑 `config/tax_config.yaml` 文件：
-```yaml
-tax:
-  vat:
-    rate: 0.13  # 增值税率
-  income_tax:
-    standard_rate: 0.25  # 企业所得税率
-  # ... 更多配置
+参数：
+
+- `--type`: `income`、`expense`、`transfer`
+- `--amount`: 金额
+- `--account`: 会计科目编号
+- `--description`: 交易描述
+- `--category`: 分类
+- `--date`: 日期，默认当天
+
+### 2. `balance`
+查看当前交易汇总。
+
+```bash
+python script/finance.py balance
 ```
 
-## 📁 数据格式
+### 3. `tax`
+计算税款。
 
-### 交易记录格式 (CSV)
-```csv
-date,type,account,amount,description,category
-2026-02-01,income,4001,50000.00,产品销售,销售收入
-2026-02-05,expense,5001,15000.00,采购原材料,主营业务成本
+```bash
+python script/finance.py tax --type vat --period 2026-02
+python script/finance.py tax --type income_tax --period 2026-Q1
+python script/finance.py tax --type vat --period 2026-02 --income 50000
 ```
 
-### 银行流水格式 (CSV)
+参数：
+
+- `--type`: `vat` 或 `income_tax`
+- `--period`: 统计期间
+- `--income`: 可选，手动指定收入；不传时会按期间从交易记录汇总
+
+### 4. `report`
+生成基础报表，输出为 JSON。
+
+```bash
+python script/finance.py report --type balance_sheet --period 2026-02 --output balance_sheet.json
+python script/finance.py report --type income_statement --period 2026-Q1 --output income_statement.json
+```
+
+参数：
+
+- `--type`: `balance_sheet` 或 `income_statement`
+- `--period`: 统计期间
+- `--output`: 可选，输出文件路径
+
+### 5. `import`
+导入标准银行流水 CSV。
+
+```bash
+python script/finance.py import --file examples/bank_statement.csv
+```
+
+CSV 需要包含以下列：
+
 ```csv
 date,description,amount,balance
 2026-02-01,工资收入,10000.00,15000.00
 2026-02-05,采购付款,-5000.00,10000.00
 ```
 
-## 🔍 使用示例
+## 配置说明
 
-### 示例1：完整月度处理
+### 环境变量
+
+- `FINANCE_DATA_DIR`: 财务数据目录，默认是当前工作目录下的 `data`
+
+示例：
+
 ```bash
-# 1. 导入当月交易
-python script/finance.py import --file monthly_transactions.csv
-
-# 2. 导入银行流水
-python script/finance.py import --file bank_statement.csv
-
-# 3. 自动对账
-# （对账功能待实现）
-
-# 4. 计算税款
-python script/finance.py tax --type vat --period 2026-02
-python script/finance.py tax --type income_tax --period 2026-02
-
-# 5. 生成月度报表
-python script/finance.py report --type balance_sheet --period 2026-02 --output feb_balance_sheet.pdf
-python script/finance.py report --type income_statement --period 2026-02 --output feb_income_statement.pdf
-
-# 6. 生成税务申报表
-python script/finance.py tax report --type vat --period 2026-02 --output vat_declaration.xlsx
+export FINANCE_DATA_DIR=/path/to/finance-data
 ```
 
-### 示例2：个人财务管理
+### 会计科目配置
+会计科目文件默认使用 `FINANCE_DATA_DIR/accounts.yaml`。
+
+仓库中提供了一份示例配置：
+
+```yaml
+accounts:
+  assets:
+    - code: "1001"
+      name: "现金"
+      type: "current_asset"
+```
+
+### 税务配置
+税务配置文件默认使用 `FINANCE_DATA_DIR/tax_config.yaml`。
+
+推荐结构如下：
+
+```yaml
+tax:
+  vat:
+    rate: 0.13
+    declaration_period: "monthly"
+  income_tax:
+    standard_rate: 0.25
+    threshold: 300000
+    declaration_period: "quarterly"
+```
+
+脚本也兼容旧版扁平结构：
+
+```yaml
+vat_rate: 0.13
+income_tax_rate: 0.25
+tax_threshold: 300000
+```
+
+## 数据格式
+
+### 交易记录
+```csv
+date,type,account,amount,description,category
+2026-02-01,income,4001,50000.00,产品销售,销售收入
+2026-02-05,expense,5001,15000.00,采购原材料,主营业务成本
+```
+
+### 银行流水
+```csv
+date,description,amount,balance
+2026-02-01,工资收入,10000.00,15000.00
+2026-02-05,采购付款,-5000.00,10000.00
+```
+
+## 测试
+运行测试脚本：
+
 ```bash
-# 1. 设置个人账户
-cp config/personal_accounts.yaml config/accounts.yaml
-
-# 2. 记录日常收支
-python script/finance.py record --type expense --amount 200 --account 5101 --description "午餐" --category "餐饮"
-python script/finance.py record --type income --amount 5000 --account 4001 --description "工资" --category "薪资收入"
-
-# 3. 查看月度总结
-python script/finance.py balance
-python script/finance.py report --type income_statement --period 2026-02 --output personal_finance_report.pdf
-
-# 4. 税务规划
-python script/finance.py tax plan --year 2026
+python script/test_finance.py
 ```
 
-### 示例3：企业财务处理
+如果你使用 conda：
+
 ```bash
-# 1. 设置企业账户
-cp config/enterprise_accounts.yaml config/accounts.yaml
-
-# 2. 批量导入交易
-python script/finance.py import --file enterprise_transactions.csv
-
-# 3. 生成财务报表
-python script/finance.py report --type balance_sheet --period 2026-Q1 --output q1_balance_sheet.pdf
-python script/finance.py report --type cash_flow --period 2026-Q1 --output q1_cash_flow.pdf
-
-# 4. 税务处理
-python script/finance.py tax calculate --period 2026-Q1 --all
-python script/finance.py tax report --period 2026-Q1 --output tax_reports.zip
-
-# 5. 审计准备
-python script/finance.py audit prepare --period 2026-Q1 --output audit_package.zip
+/opt/homebrew/Caskroom/miniconda/base/envs/python3.12/bin/python script/test_finance.py
 ```
 
-## 🛠 高级功能
+当前测试覆盖：
 
-### 自动化脚本
-创建 `script/automate_finance.py`：
-```python
-from finance import FinanceAccounting
-import schedule
-import time
+- 基础记账和余额计算
+- 银行流水导入
+- 嵌套税务配置兼容
+- 按月份、季度、年份的期间过滤
 
-def daily_task():
-    """每日自动任务"""
-    finance = FinanceAccounting()
-    # 自动导入银行流水
-    finance.import_bank_statement("daily_bank_statement.csv")
-    # 生成日报
-    finance.generate_report("daily_summary", datetime.now().strftime("%Y-%m-%d"))
+## 注意事项
 
-def monthly_task():
-    """月度自动任务"""
-    finance = FinanceAccounting()
-    # 生成月度报表
-    period = datetime.now().strftime("%Y-%m")
-    finance.generate_report("balance_sheet", period)
-    finance.generate_report("income_statement", period)
-    # 计算月度税款
-    finance.calculate_tax("vat", period)
-    finance.calculate_tax("income_tax", period)
-
-# 设置定时任务
-schedule.every().day.at("18:00").do(daily_task)
-schedule.every().month.last_day.at("23:59").do(monthly_task)
-
-while True:
-    schedule.run_pending()
-    time.sleep(60)
-```
-
-### 数据导出
-```bash
-# 导出为Excel
-python script/finance.py export --format excel --output financial_data.xlsx
-
-# 导出为JSON
-python script/finance.py export --format json --output financial_data.json
-
-# 导出为PDF报告
-python script/finance.py export --format pdf --output financial_report.pdf
-```
-
-## 🔗 集成功能
-
-### 与OpenClaw其他技能集成
-```bash
-# 使用github技能版本控制财务数据
-clawhub install github
-# 定期提交财务数据到GitHub
-
-# 使用tavily-search搜索税务法规
-clawhub install openclaw-tavily-search
-# 搜索最新税务政策
-
-# 使用proactive-agent自动执行任务
-clawhub install proactive-agent
-# 设置自动记账、对账、报税任务
-```
-
-### 外部系统集成
-- **银行API**: 自动获取银行流水
-- **税务系统**: 电子申报接口
-- **ERP系统**: 企业资源计划集成
-- **支付系统**: 支付宝、微信支付集成
-
-## ⚠️ 注意事项
-
-### 数据安全
-1. **加密存储**: 财务数据使用加密存储
-2. **访问控制**: 设置严格的访问权限
-3. **备份策略**: 定期备份重要数据
-4. **审计日志**: 记录所有操作日志
-
-### 合规性要求
-1. **会计准则**: 符合中国会计准则
-2. **税务法规**: 遵守最新税务法规
-3. **数据隐私**: 符合GDPR等隐私法规
-4. **审计要求**: 满足审计追踪要求
-
-### 性能优化
-1. **数据索引**: 为大量数据建立索引
-2. **缓存策略**: 缓存常用计算结果
-3. **批量处理**: 支持批量数据导入导出
-4. **异步处理**: 耗时任务异步执行
-
-## 🔍 故障排除
-
-### 常见问题
-1. **导入失败**: 检查文件格式和编码
-2. **计算错误**: 验证会计科目设置
-3. **报表生成失败**: 检查依赖库安装
-4. **性能问题**: 优化数据查询和索引
-
-### 日志查看
-```bash
-# 查看运行日志
-tail -f logs/finance.log
-
-# 查看错误日志
-tail -f logs/error.log
-
-# 查看审计日志
-tail -f logs/audit.log
-```
-
-### 调试模式
-```bash
-# 启用调试模式
-python script/finance.py --debug balance
-
-# 详细日志输出
-python script/finance.py --verbose tax --type vat --period 2026-02
-```
-
-## 📈 更新计划
-
-### 近期更新 (v1.1.0)
-- [ ] 添加更多报表模板
-- [ ] 支持更多银行格式
-- [ ] 优化税务计算算法
-- [ ] 添加数据可视化功能
-
-### 中期规划 (v2.0.0)
-- [ ] AI智能分析功能
-- [ ] 预测和预算功能
-- [ ] 多语言支持
-- [ ] 移动端应用
-
-### 长期愿景
-- [ ] 区块链财务系统
-- [ ] 智能合约集成
-- [ ] 跨境财务处理
-- [ ] 实时审计系统
-
-## 📞 支持与贡献
-
-### 问题反馈
-1. GitHub Issues: 提交问题和建议
-2. 邮件支持: finance-support@example.com
-3. 文档更新: 提交文档改进
-
-### 贡献指南
-1. Fork项目仓库
-2. 创建功能分支
-3. 提交Pull Request
-4. 通过代码审查
-
-### 开发环境
-```bash
-# 克隆项目
-git clone https://github.com/yourusername/finance-accounting.git
-
-# 安装开发依赖
-pip install -r requirements-dev.txt
-
-# 运行测试
-pytest tests/
-
-# 代码检查
-flake8 script/finance.py
-mypy script/finance.py
-```
-
----
-
-**版本**: v1.0.0  
-**最后更新**: 2026-02-28  
-**作者**: 天元 (⚡)  
-**许可证**: MIT License  
-**状态**: ✅ 生产就绪
+- 当前实现适合轻量记账、技能演示和自动化场景，不应直接替代正式财务系统或报税系统。
+- 报表输出目前为 JSON，不生成 PDF/Excel。
+- 修改税务配置后，建议重新运行测试确认结果正确。
