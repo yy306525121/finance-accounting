@@ -20,7 +20,12 @@ class FinanceAccounting:
     def __init__(self, data_dir=None):
         """初始化财务系统"""
         if data_dir is None:
-            data_dir = os.getenv("FINANCE_DATA_DIR", "data")
+            env_data_dir = os.getenv("FINANCE_DATA_DIR")
+            if env_data_dir:
+                data_dir = env_data_dir
+            else:
+                data_dir = "data"
+                print("提示: 未设置 FINANCE_DATA_DIR，当前使用默认数据目录: data")
         self.data_dir = Path(data_dir)
         self.data_dir.mkdir(exist_ok=True)
         
